@@ -1,37 +1,38 @@
-import { memo, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { getFollowingUsersPostsAction } from "../../redux/actions/postActions";
 import CommonLoading from "../loader/CommonLoading";
 import Post from "../post/Post";
 import NoPost from "../../assets/nopost.jpg";
 
-const MemoizedPost = memo(Post);
-
 const FollowingUsersPosts = ({ communityData }) => {
   const dispatch = useDispatch();
-
   const followingUsersPosts = useSelector(
     (state) => state.posts?.followingUsersPosts
   );
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchInitialPosts = async () => {
-      setIsLoading(true);
-      if (communityData?._id) {
-        await dispatch(getFollowingUsersPostsAction(communityData._id));
+      try {
+        if (communityData?._id) {
+          await dispatch(getFollowingUsersPostsAction(communityData._id));
+        }
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
     fetchInitialPosts();
   }, [dispatch, communityData]);
 
-  const memoizedFollowingUsersPost = useMemo(() => {
-    return followingUsersPosts.map((post) => (
-      <MemoizedPost key={post._id} post={post} />
-    ));
-  }, [followingUsersPosts]);
+  const memoizedFollowingUsersPost = useMemo(
+    () =>
+      followingUsersPosts.map((post) => (
+        <Post key={post._id} post={post} />
+      )),
+    [followingUsersPosts]
+  );
 
   return (
     <div className="main-section">
