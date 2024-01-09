@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import {
   addCommentAction,
   getPostAction,
@@ -6,14 +7,12 @@ import {
   getOwnPostAction,
   clearCommentFailAction,
 } from "../../redux/actions/postActions";
-import { useDispatch, useSelector } from "react-redux";
 import InappropriatePost from "../modals/InappropriatePostModal";
 
 const CommentForm = ({ communityId, postId }) => {
   const dispatch = useDispatch();
   const [showInappropriateContentModal, setShowInappropriateContentModal] =
     useState(false);
-
   const [content, setContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -24,15 +23,14 @@ const CommentForm = ({ communityId, postId }) => {
       content,
       postId,
     };
+
     try {
       setIsLoading(true);
       await dispatch(addCommentAction(postId, newComment));
       await dispatch(getPostAction(postId));
       await dispatch(getOwnPostAction(postId));
-
       setIsLoading(false);
       setContent("");
-
       await dispatch(getComPostsAction(communityId));
     } finally {
       setIsLoading(false);
@@ -49,13 +47,15 @@ const CommentForm = ({ communityId, postId }) => {
     }
   }, [isCommentInappropriate]);
 
+  const closeModalAndClearError = () => {
+    setShowInappropriateContentModal(false);
+    dispatch(clearCommentFailAction());
+  };
+
   return (
     <div>
       <InappropriatePost
-        closeInappropriateContentModal={() => {
-          setShowInappropriateContentModal(false);
-          dispatch(clearCommentFailAction());
-        }}
+        closeInappropriateContentModal={closeModalAndClearError}
         showInappropriateContentModal={showInappropriateContentModal}
         contentType={"comment"}
       />
