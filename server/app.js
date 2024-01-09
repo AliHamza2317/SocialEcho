@@ -1,11 +1,4 @@
-/**
- * Project Name: SocialEcho
- * Description: A social networking platform with automated content moderation and context-based authentication system.
- *
- * Author: Neaz Mahmud
- * Email: neaz6160@gmail.com
- * Date: 19th June 2023
- */
+
 
 require("dotenv").config();
 const express = require("express");
@@ -26,14 +19,14 @@ const passport = require("passport");
 
 const PORT = process.env.PORT || 4000;
 
-// const db = new Database(process.env.MONGODB_URI, {
-//   useNewUrlParser: true,
-//   useUnifiedTopology: true,
-// });
+const db = new Database("mongodb://localhost:27017/ReProject", {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
 
-// db.connect().catch((err) =>
-//   console.error("Error connecting to database:", err)
-// );
+db.connect().catch((err) =>
+  console.error("Error connecting to database:", err)
+);
 
 app.use(cors());
 app.use(morgan("dev"));
