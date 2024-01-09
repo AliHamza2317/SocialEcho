@@ -1,3 +1,4 @@
+import React from "react";
 import { useNavigate, useLocation } from "react-router";
 import { useMemo } from "react";
 
@@ -5,8 +6,15 @@ const PostOnProfile = ({ post }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { content, fileUrl, community, createdAt, comments, likes, isMember } =
-    post;
+  const {
+    content,
+    fileUrl,
+    community,
+    createdAt,
+    comments,
+    likes,
+    isMember,
+  } = post;
 
   const isImageFile = useMemo(() => {
     const validExtensions = [".jpg", ".png", ".jpeg", ".gif", ".webp", ".svg"];
@@ -14,18 +22,20 @@ const PostOnProfile = ({ post }) => {
     return validExtensions.includes(fileExtension);
   }, [fileUrl]);
 
+  const handlePostClick = () => {
+    if (isMember) {
+      navigate(`/my/post/${post._id}`, {
+        state: { from: location.pathname },
+      });
+    }
+  };
+
   return (
     <div
       className={`bg-white rounded-md p-3 border my-2 cursor-pointer transition-all duration-300 ${
         isMember ? "hover:shadow-md" : "opacity-50 pointer-events-none"
       }`}
-      onClick={() => {
-        if (isMember) {
-          navigate(`/my/post/${post._id}`, {
-            state: { from: location.pathname },
-          });
-        }
-      }}
+      onClick={handlePostClick}
     >
       <div className="flex items-center">
         <p className="text-sm text-gray-500">
