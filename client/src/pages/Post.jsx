@@ -1,5 +1,5 @@
-import { useSelector, useDispatch } from "react-redux";
-import { useEffect, lazy, useMemo, Suspense } from "react";
+import React, { useEffect, lazy, useMemo, Suspense } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { getPostAction, clearPostAction } from "../redux/actions/postActions";
 import { useParams, useNavigate } from "react-router-dom";
 import CommonLoading from "../components/loader/CommonLoading";
@@ -14,13 +14,20 @@ const Post = () => {
   const navigate = useNavigate();
 
   const userData = useSelector((state) => state.auth?.userData);
-
   const joinedCommunities = useSelector((state) =>
     state.community?.joinedCommunities?.map(({ _id }) => _id)
   );
 
   useEffect(() => {
-    dispatch(getPostAction(postId));
+    const fetchPost = async () => {
+      try {
+        await dispatch(getPostAction(postId));
+      } finally {
+        dispatch(clearPostAction());
+      }
+    };
+
+    fetchPost();
 
     return () => {
       dispatch(clearPostAction());
@@ -29,9 +36,10 @@ const Post = () => {
 
   const post = useSelector((state) => state.posts?.post);
 
-  const isAuthorized = useMemo(() => {
-    return post && joinedCommunities?.includes(post.community._id);
-  }, [post, joinedCommunities]);
+  const isAuthorized = useMemo(() => post && joinedCommunities?.includes(post.community._id), [
+    post,
+    joinedCommunities,
+  ]);
 
   useEffect(() => {
     if (isAuthorized === false) {
@@ -46,6 +54,7 @@ const Post = () => {
       </div>
     );
   }
+
   return (
     <Suspense fallback={<FallbackLoading />}>
       <PostView post={post} userData={userData} />
