@@ -26,14 +26,14 @@ const passport = require("passport");
 
 const PORT = process.env.PORT || 4000;
 
-const db = new Database(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+// const db = new Database(process.env.MONGODB_URI, {
+//   useNewUrlParser: true,
+//   useUnifiedTopology: true,
+// });
 
-db.connect().catch((err) =>
-  console.error("Error connecting to database:", err)
-);
+// db.connect().catch((err) =>
+//   console.error("Error connecting to database:", err)
+// );
 
 app.use(cors());
 app.use(morgan("dev"));
@@ -71,4 +71,4 @@ process.on("SIGINT", async () => {
   }
 });
 
-app.listen(PORT, () => console.log(`Server up and running on port ${PORT}!`));
+app.listen(PORT, () => console.log(`Server up and running on port ${PORT}!`+"    " +"Project Build Successfully" ));
