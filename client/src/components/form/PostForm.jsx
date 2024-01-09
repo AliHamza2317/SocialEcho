@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   createPostAction,
@@ -10,13 +10,11 @@ import EligibilityDetectionFailModal from "../modals/EligibilityDetectionFailMod
 
 const PostForm = ({ communityId, communityName }) => {
   const dispatch = useDispatch();
-  const [showInappropriateContentModal, setShowInappropriateContentModal] =
-    useState(false);
-  const [showTopicConflictModal, setShowTopicConflictModal] = useState(false);
-  const [
-    showEligibilityDetectionFailModal,
-    setShowEligibilityDetectionFailModal,
-  ] = useState(false);
+  const [modalState, setModalState] = useState({
+    showInappropriateContentModal: false,
+    showTopicConflictModal: false,
+    showEligibilityDetectionFailModal: false,
+  });
 
   const [formData, setFormData] = useState({
     content: "",
@@ -25,57 +23,67 @@ const PostForm = ({ communityId, communityName }) => {
     loading: false,
   });
 
-  const { isPostInappropriate, postCategory, confirmationToken } = useSelector(
-    (state) => ({
-      isPostInappropriate: state.posts?.isPostInappropriate,
-      postCategory: state.posts?.postCategory,
-      confirmationToken: state.posts?.confirmationToken,
-    })
-  );
+  const {
+    isPostInappropriate,
+    postCategory,
+    confirmationToken,
+  } = useSelector((state) => state.posts);
 
   const handleContentChange = (event) => {
-    setFormData({
-      ...formData,
+    setFormData((prevData) => ({
+      ...prevData,
       content: event.target.value,
-    });
+    }));
   };
 
   const handleFileChange = (event) => {
     const selectedFile = event.target.files[0];
-    if (
-      selectedFile &&
-      selectedFile.size <= 50 * 1024 * 1024 // 50MB
-    ) {
-      setFormData({
-        ...formData,
+
+    if (selectedFile && selectedFile.size <= 50 * 1024 * 1024) {
+      setFormData((prevData) => ({
+        ...prevData,
         file: selectedFile,
         error: "",
-      });
+      }));
     } else {
-      setFormData({
-        ...formData,
+      setFormData((prevData) => ({
+        ...prevData,
         file: null,
         error: "Please select an image or video file under 50MB.",
-      });
+      }));
     }
   };
 
   useEffect(() => {
-    if (isPostInappropriate) setShowInappropriateContentModal(true);
-    if (postCategory) setShowTopicConflictModal(true);
-    if (confirmationToken) setShowEligibilityDetectionFailModal(true);
+    setModalState({
+      showInappropriateContentModal: isPostInappropriate,
+      showTopicConflictModal: Boolean(postCategory),
+      showEligibilityDetectionFailModal: Boolean(confirmationToken),
+    });
   }, [isPostInappropriate, postCategory, confirmationToken]);
+
+  const closeModalAndClearError = () => {
+    setModalState({
+      showInappropriateContentModal: false,
+      showTopicConflictModal: false,
+      showEligibilityDetectionFailModal: false,
+    });
+
+    dispatch(clearCreatePostFail());
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+
     const { content, file, loading } = formData;
+
     if (loading) return;
 
     if (!content && !file) {
-      setFormData({
-        ...formData,
+      setFormData((prevData) => ({
+        ...prevData,
         error: "Please enter a message or select a file.",
-      });
+      }));
       return;
     }
 
@@ -85,63 +93,58 @@ const PostForm = ({ communityId, communityName }) => {
     newPost.append("communityName", communityName);
     newPost.append("file", file);
 
-    setFormData({
-      ...formData,
+    setFormData((prevData) => ({
+      ...prevData,
       loading: true,
-    });
+    }));
 
     try {
       await dispatch(createPostAction(newPost));
+
       setFormData({
         content: "",
         file: null,
         error: "",
         loading: false,
       });
+
       event.target.reset();
     } catch (error) {
-      setFormData({
-        ...formData,
+      setFormData((prevData) => ({
+        ...prevData,
         loading: false,
-      });
+      }));
     }
   };
 
   const handleRemoveFile = () => {
-    setFormData({
-      ...formData,
+    setFormData((prevData) => ({
+      ...prevData,
       file: null,
       error: "",
-    });
+    }));
   };
 
   return (
     <>
       <InappropriatePostModal
-        closeInappropriateContentModal={() => {
-          setShowInappropriateContentModal(false);
-          dispatch(clearCreatePostFail());
-        }}
-        showInappropriateContentModal={showInappropriateContentModal}
+        closeInappropriateContentModal={closeModalAndClearError}
+        showInappropriateContentModal={modalState.showInappropriateContentModal}
         contentType={"post"}
       />
 
       <TopicConflictModal
-        closeTopicConflictModal={() => {
-          setShowTopicConflictModal(false);
-          dispatch(clearCreatePostFail());
-        }}
-        showTopicConflictModal={showTopicConflictModal}
+        closeTopicConflictModal={closeModalAndClearError}
+        showTopicConflictModal={modalState.showTopicConflictModal}
         communityName={postCategory?.community}
         recommendedCommunity={postCategory?.recommendedCommunity}
       />
 
       <EligibilityDetectionFailModal
-        closeEligibilityDetectionFailModal={() => {
-          setShowEligibilityDetectionFailModal(false);
-          dispatch(clearCreatePostFail());
-        }}
-        showEligibilityDetectionFailModal={showEligibilityDetectionFailModal}
+        closeEligibilityDetectionFailModal={closeModalAndClearError}
+        showEligibilityDetectionFailModal={
+          modalState.showEligibilityDetectionFailModal
+        }
         confirmationToken={confirmationToken}
       />
 
