@@ -1,134 +1,90 @@
-import { memo, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import {
-  getComPostsAction,
-  clearCommunityPostsAction,
-} from "../../redux/actions/postActions";
-import PostForm from "../form/PostForm";
+import { getPostsAction, clearPostsAction } from "../../redux/actions/postActions";
 import Post from "../post/Post";
-import FollowingUsersPosts from "./FollowingUsersPosts";
 import CommonLoading from "../loader/CommonLoading";
+import Home from "../../assets/home.jpg";
 
-const MemoizedPost = memo(Post);
+const MemoizedPost = React.memo(Post);
+
+const LoadMoreButton = ({ onClick, isLoading }) => (
+  <button
+    className="bg-primary hover:bg-blue-700 text-sm text-white font-semibold rounded-md w-full p-2 my-3"
+    onClick={onClick}
+    disabled={isLoading}
+  >
+    {isLoading ? "Loading..." : "Load More Posts"}
+  </button>
+);
+
+const PostsList = ({ posts }) => {
+  return <div>{posts.map((post) => <MemoizedPost key={post._id} post={post} />)}</div>;
+};
+
+const NoPostsMessage = () => (
+  <div className="text-center text-gray-700 flex justify-center items-center flex-col">
+    <p className="py-5 font-semibold">
+      No posts to show. Join a community and post something.
+    </p>
+    <img loading="lazy" src={Home} alt="no post" />
+  </div>
+);
 
 const MainSection = () => {
   const dispatch = useDispatch();
-
-  const communityData = useSelector((state) => state.community?.communityData);
-  const communityPosts = useSelector((state) => state.posts?.communityPosts);
-
-  const totalCommunityPosts = useSelector(
-    (state) => state.posts?.totalCommunityPosts
-  );
-
-  const [activeTab, setActiveTab] = useState("All posts");
   const [isLoading, setIsLoading] = useState(true);
+  const posts = useSelector((state) => state.posts?.posts);
+  const totalPosts = useSelector((state) => state.posts?.totalPosts);
   const [isLoadMoreLoading, setIsLoadMoreLoading] = useState(false);
+
   const LIMIT = 10;
 
-  const postError = useSelector((state) => state.posts?.postError);
-
   useEffect(() => {
-    const fetchInitialPosts = async () => {
-      if (communityData?._id) {
-        dispatch(getComPostsAction(communityData._id, LIMIT, 0)).finally(() => {
-          setIsLoading(false);
-        });
+    const fetchData = async () => {
+      try {
+        await dispatch(getPostsAction(LIMIT, 0));
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    fetchInitialPosts();
+    fetchData();
 
     return () => {
-      dispatch(clearCommunityPostsAction());
+      dispatch(clearPostsAction());
     };
-  }, [dispatch, communityData]);
+  }, [dispatch, LIMIT]);
 
-  const handleLoadMore = () => {
-    if (
-      !isLoadMoreLoading &&
-      communityPosts.length > 0 &&
-      communityPosts.length < totalCommunityPosts
-    ) {
-      setIsLoadMoreLoading(true);
-      dispatch(
-        getComPostsAction(communityData._id, LIMIT, communityPosts.length)
-      ).finally(() => {
-        setIsLoadMoreLoading(false);
-      });
-    }
-  };
+  const handleLoadMore = useCallback(() => {
+    setIsLoadMoreLoading(true);
+    dispatch(getPostsAction(LIMIT, posts.length)).finally(() => {
+      setIsLoadMoreLoading(false);
+    });
+  }, [dispatch, LIMIT, posts.length]);
 
-  const memoizedCommunityPosts = useMemo(() => {
-    return communityPosts?.map((post) => (
-      <MemoizedPost key={post._id} post={post} />
-    ));
-  }, [communityPosts]);
+  const memoizedPosts = useMemo(() => <PostsList posts={posts} />, [posts]);
 
-  if (isLoading || !communityData || !communityPosts) {
+  if (isLoading) {
     return (
-      <div className="main-section flex items-center justify-center h-screen">
+      <div className="flex justify-center items-center h-screen">
         <CommonLoading />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col">
-      <ul className="flex">
-        <li
-          className={`${
-            activeTab === "All posts"
-              ? "border-blue-500 bg-primary rounded-md text-white"
-              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-          } flex-1 cursor-pointer text-center py-2 px-1 border-b-2 font-medium`}
-          onClick={() => setActiveTab("All posts")}
-        >
-          All post
-        </li>
-        <li
-          className={`${
-            activeTab === "You're following"
-              ? "border-blue-500 bg-primary rounded-md text-white"
-              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-          } flex-1 cursor-pointer text-center py-2 px-1 border-b-2 font-medium`}
-          onClick={() => setActiveTab("You're following")}
-        >
-          You're following
-        </li>
-      </ul>
-      <div className="mt-4 flex flex-col gap-4">
-        {activeTab === "All posts" && (
-          <>
-            <div className="mb-4">
-              <PostForm
-                communityId={communityData._id}
-                communityName={communityData.name}
-              />
-            </div>
-            {postError && (
-              <div className="text-red-500 bg-red-100 border border-red-500 p-3 rounded-md text-center mx-auto">
-                {postError}
-              </div>
-            )}
-
-            <div>{memoizedCommunityPosts}</div>
-            {communityPosts.length < totalCommunityPosts && (
-              <button
-                className="bg-primary hover:bg-blue-700 text-sm text-white font-semibold rounded-md w-full p-2 my-3"
-                onClick={handleLoadMore}
-                disabled={isLoadMoreLoading}
-              >
-                {isLoadMoreLoading ? "Loading..." : "Load More Posts"}
-              </button>
-            )}
-          </>
-        )}
-        {activeTab === "You're following" && (
-          <FollowingUsersPosts communityData={communityData} />
-        )}
-      </div>
-    </div>
+    <>
+      {posts.length > 0 ? (
+        <>
+          {memoizedPosts}
+          {posts.length < totalPosts && (
+            <LoadMoreButton onClick={handleLoadMore} isLoading={isLoadMoreLoading} />
+          )}
+        </>
+      ) : (
+        <NoPostsMessage />
+      )}
+    </>
   );
 };
 

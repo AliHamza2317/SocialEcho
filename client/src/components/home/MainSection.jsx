@@ -1,9 +1,6 @@
-import { memo, useMemo, useEffect, useState, useCallback } from "react";
-import {
-  getPostsAction,
-  clearPostsAction,
-} from "../../redux/actions/postActions";
-import { useSelector, useDispatch } from "react-redux";
+import React, { memo, useMemo, useEffect, useState, useCallback } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { getPostsAction, clearPostsAction } from "../../redux/actions/postActions";
 import Post from "../post/Post";
 import CommonLoading from "../loader/CommonLoading";
 import Home from "../../assets/home.jpg";
@@ -30,27 +27,36 @@ const MainSection = ({ userData }) => {
   const LIMIT = 10;
 
   useEffect(() => {
-    if (userData) {
-      dispatch(getPostsAction(LIMIT, 0)).finally(() => {
+    const fetchPosts = async () => {
+      try {
+        if (userData) {
+          await dispatch(getPostsAction(LIMIT, 0));
+        }
+      } finally {
         setIsLoading(false);
-      });
-    }
+      }
+    };
+
+    fetchPosts();
 
     return () => {
       dispatch(clearPostsAction());
     };
   }, [userData, dispatch, LIMIT]);
 
-  const handleLoadMore = useCallback(() => {
+  const handleLoadMore = useCallback(async () => {
     setIsLoadMoreLoading(true);
-    dispatch(getPostsAction(LIMIT, posts.length)).finally(() => {
+    try {
+      await dispatch(getPostsAction(LIMIT, posts.length));
+    } finally {
       setIsLoadMoreLoading(false);
-    });
+    }
   }, [dispatch, LIMIT, posts.length]);
 
-  const memoizedPosts = useMemo(() => {
-    return posts.map((post) => <MemoizedPost key={post._id} post={post} />);
-  }, [posts]);
+  const memoizedPosts = useMemo(
+    () => posts.map((post) => <MemoizedPost key={post._id} post={post} />),
+    [posts]
+  );
 
   if (isLoading) {
     return (
@@ -59,15 +65,13 @@ const MainSection = ({ userData }) => {
       </div>
     );
   }
+
   return (
     <>
       <div>{memoizedPosts}</div>
 
       {posts.length > 0 && posts.length < totalPosts && (
-        <LoadMoreButton
-          onClick={handleLoadMore}
-          isLoading={isLoadMoreLoading}
-        />
+        <LoadMoreButton onClick={handleLoadMore} isLoading={isLoadMoreLoading} />
       )}
 
       {posts.length === 0 && (
