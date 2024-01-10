@@ -18,6 +18,8 @@ const {
   unsavePost,
   getSavedPosts,
   clearPendingPosts,
+  editPost,
+  editComment
 } = require("../controllers/post.controller");
 const {
   postValidator,
@@ -80,5 +82,10 @@ router.patch("/:id/save", savePost);
 router.patch("/:id/unsave", unsavePost);
 router.patch("/:id/like", likePost);
 router.patch("/:id/unlike", unlikePost);
+// PUT route to edit a post
+// router.put('/edit/:id', editPost);
+router.put('/posts/:postId', editPost);
+// Add the route for editing a comment
+router.put("/:commentId/edit", editComment);
 
 module.exports = router;

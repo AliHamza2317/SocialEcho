@@ -17,10 +17,13 @@ const createPost = async (req, res) => {
     const { communityId, content } = req.body;
     const { userId, file, fileUrl, fileType } = req;
 
+    // Move the console.log statements after the community query
     const community = await Community.findOne({
-      _id: { $eq: communityId },
-      members: { $eq: userId },
+      _id: communityId,
     });
+    
+    console.log('Community Query Result:', community);
+    
 
     if (!community) {
       if (file) {
@@ -41,8 +44,6 @@ const createPost = async (req, res) => {
       user: userId,
       community: communityId,
       content,
-      fileUrl: fileUrl ? fileUrl : null,
-      fileType: fileType ? fileType : null,
     });
 
     const savedPost = await newPost.save();
@@ -57,11 +58,56 @@ const createPost = async (req, res) => {
 
     res.json(post);
   } catch (error) {
+    console.log(error);
     res.status(500).json({
       message: "Error creating post",
     });
   }
 };
+
+const editPost = async (req, res) => {
+  try {
+    const { postId } = req.params; // Assuming postId is passed as a route parameter
+    const { content } = req.body;
+
+    const post = await Post.findById(postId);
+
+    if (!post) {
+      return res.status(404).json({
+        message: "Post not found",
+      });
+    }
+
+    // Check if the user is authorized to edit the post
+    if (post.user.toString() !== req.userId) {
+      return res.status(401).json({
+        message: "Unauthorized to edit this post",
+      });
+    }
+
+    // Update the post content
+    post.content = content;
+    const updatedPost = await post.save();
+
+    // Separate query to populate additional fields
+    const populatedPost = await Post.findById(updatedPost._id)
+      .populate("user", "name avatar")
+      .populate("community", "name")
+      .lean();
+
+    populatedPost.createdAt = dayjs(populatedPost.createdAt).fromNow();
+
+    res.json(populatedPost);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Error updating post",
+    });
+  }
+};
+
+
+
 
 const confirmPost = async (req, res) => {
   try {
@@ -348,6 +394,41 @@ const getFollowingUsersPosts = async (req, res) => {
   }
 };
 
+
+
+
+
+// const editPost = async(req, res) =>{
+//   try {
+//     const postId = req.params.id;
+//     const { content } = req.body;
+
+//     // Find the post by ID
+//     const post = await Post.findById(postId);
+
+//     if (!post) {
+//       return res.status(404).json({
+//         message: 'Post not found. It may have been deleted already',
+//       });
+//     }
+
+//     // Update post fields
+//     post.content = content;
+
+//     // Save the updated post
+//     await post.save();
+
+//     res.status(200).json({
+//       message: 'Post updated successfully',
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({
+//       message: 'An error occurred while updating the post',
+//     });
+//   }
+// }
+
 const deletePost = async (req, res) => {
   try {
     const id = req.params.id;
@@ -484,6 +565,7 @@ const addComment = async (req, res) => {
       }
     );
     res.status(200).json({
+      comment: newComment,
       message: "Comment added successfully",
     });
   } catch (error) {
@@ -492,6 +574,46 @@ const addComment = async (req, res) => {
     });
   }
 };
+
+// Edit Comment controller
+const editComment = async (req, res) => {
+  try {
+    const { commentId } = req.params; // Extract commentId from URL params
+    const { content } = req.body; // Extract content from request body
+
+    // Find the comment by its ID
+    const existingComment = await Comment.findById(commentId);
+
+    // Check if the comment exists
+    if (!existingComment) {
+      return res.status(404).json({ message: "Comment not found" });
+    }
+
+    // Check if the user making the request is the owner of the comment
+    if (existingComment.user.toString() !== req.userId) {
+      return res.status(403).json({ message: "Permission denied. You are not the owner of this comment." });
+    }
+
+    // Update the content of the comment
+    existingComment.content = content;
+
+    // Save the updated comment
+    await existingComment.save();
+
+    res.status(200).json({
+      updatecomment: existingComment,
+      message: "Comment updated successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Error updating comment",
+    });
+  }
+};
+
+
+
 
 const savePost = async (req, res) => {
   await saveOrUnsavePost(req, res, "$addToSet");
@@ -662,4 +784,6 @@ module.exports = {
   getSavedPosts,
   getPublicPosts,
   getFollowingUsersPosts,
+  editPost,
+  editComment
 };

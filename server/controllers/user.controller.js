@@ -165,11 +165,11 @@ const signin = async (req, res, next) => {
       email: existingUser.email,
     };
 
-    const accessToken = jwt.sign(payload, process.env.SECRET, {
+    const accessToken = jwt.sign(payload, "ilovecoding", {
       expiresIn: "6h",
     });
 
-    const refreshToken = jwt.sign(payload, process.env.REFRESH_SECRET, {
+    const refreshToken = jwt.sign(payload, "coding", {
       expiresIn: "7d",
     });
 
@@ -193,18 +193,19 @@ const signin = async (req, res, next) => {
       },
     });
   } catch (err) {
+    console.error(err); // Log the error object
     await saveLogInfo(
       req,
       MESSAGE.SIGN_IN_ERROR + err.message,
       LOG_TYPE.SIGN_IN,
       LEVEL.ERROR
     );
-
+  
     res.status(500).json({
       message: "Something went wrong",
     });
   }
-};
+}  
 
 /**
  * Retrieves a user's profile information, including their total number of posts,

@@ -97,29 +97,29 @@ const signin = async (req, res) => {
     const existingUser = await Admin.findOne({
       username,
     });
+
+    console.log(existingUser);
     if (!existingUser) {
       return res.status(404).json({
-        message: "Invalid credentials",
+        message: 'Invalid credentials',
       });
     }
 
-    const isPasswordCorrect = await bcrypt.compare(
-      password,
-      existingUser.password
-    );
+    const isPasswordCorrect = password === existingUser.password;
 
     if (!isPasswordCorrect) {
       return res.status(400).json({
-        message: "Invalid credentials",
+        message: 'Invalid credentials',
       });
     }
+
     const payload = {
       id: existingUser._id,
       username: existingUser.username,
     };
 
-    const accessToken = jwt.sign(payload, process.env.SECRET, {
-      expiresIn: "6h",
+    const accessToken = jwt.sign(payload, 'ilovecoding', {
+      expiresIn: '6h',
     });
 
     const newAdminToken = new AdminToken({
@@ -138,8 +138,9 @@ const signin = async (req, res) => {
       },
     });
   } catch (err) {
+    console.log(err);
     res.status(500).json({
-      message: "Something went wrong",
+      message: 'Something went wrong',
     });
   }
 };

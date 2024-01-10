@@ -1,29 +1,33 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { HiOutlineHandThumbUp, HiHandThumbUp } from "react-icons/hi2";
 import { useDispatch, useSelector } from "react-redux";
-import { likePostAction, unlikePostAction } from "../../redux/actions/postActions";
+import {
+  likePostAction,
+  unlikePostAction,
+} from "../../redux/actions/postActions";
 
 const Like = ({ post }) => {
   const dispatch = useDispatch();
+  const { _id, likes } = post;
   const userData = useSelector((state) => state.auth?.userData);
 
-  const initialLikeState = {
-    liked: post.likes.includes(userData?._id),
-    localLikes: post.likes.length,
-  };
-
-  const [likeState, setLikeState] = useState(initialLikeState);
+  const [likeState, setLikeState] = useState({
+    liked: post.likes.includes(userData._id),
+    localLikes: likes.length,
+  });
 
   useEffect(() => {
     setLikeState({
-      liked: post.likes.includes(userData?._id),
+      liked: post.likes.includes(userData._id),
       localLikes: post.likes.length,
     });
-  }, [post.likes, userData?._id]);
+  }, [post.likes, userData._id]);
 
   const toggleLike = async (e) => {
     e.preventDefault();
-    const optimisticLikes = likeState.liked ? likeState.localLikes - 1 : likeState.localLikes + 1;
+    const optimisticLikes = likeState.liked
+      ? likeState.localLikes - 1
+      : likeState.localLikes + 1;
 
     setLikeState((prevState) => ({
       ...prevState,
@@ -33,9 +37,9 @@ const Like = ({ post }) => {
 
     try {
       if (likeState.liked) {
-        await dispatch(unlikePostAction(post._id));
+        dispatch(unlikePostAction(_id));
       } else {
-        await dispatch(likePostAction(post._id));
+        dispatch(likePostAction(_id));
       }
     } catch (error) {
       setLikeState((prevState) => ({
@@ -47,7 +51,10 @@ const Like = ({ post }) => {
   };
 
   return (
-    <button onClick={toggleLike} className="flex items-center cursor-pointer gap-1 text-lg">
+    <button
+      onClick={toggleLike}
+      className="flex items-center cursor-pointer gap-1 text-lg"
+    >
       {likeState.liked ? (
         <HiHandThumbUp className="text-2xl" />
       ) : (

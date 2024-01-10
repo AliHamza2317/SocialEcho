@@ -38,6 +38,7 @@ const createCommunity = async (req, res) => {
     const savedCommunities = await Community.insertMany(communities);
     res.status(201).json(savedCommunities);
   } catch (error) {
+    console.log(error)
     res.status(409).json({
       message: "Error creating community",
     });

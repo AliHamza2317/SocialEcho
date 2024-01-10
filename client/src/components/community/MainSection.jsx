@@ -1,9 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import {
-  getPostsAction,
-  clearPostsAction,
-} from "../../redux/actions/postActions";
+import { getPostsAction, clearPostsAction } from "../../redux/actions/postActions";
 import Post from "../post/Post";
 import CommonLoading from "../loader/CommonLoading";
 import Home from "../../assets/home.jpg";
@@ -20,9 +17,9 @@ const LoadMoreButton = ({ onClick, isLoading }) => (
   </button>
 );
 
-const PostsList = ({ posts }) => (
-  <div>{posts.map((post) => <MemoizedPost key={post._id} post={post} />)}</div>
-);
+const PostsList = ({ posts }) => {
+  return <div>{posts.map((post) => <MemoizedPost key={post._id} post={post} />)}</div>;
+};
 
 const NoPostsMessage = () => (
   <div className="text-center text-gray-700 flex justify-center items-center flex-col">
@@ -67,26 +64,27 @@ const MainSection = () => {
 
   const memoizedPosts = useMemo(() => <PostsList posts={posts} />, [posts]);
 
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <CommonLoading />
+      </div>
+    );
+  }
+
   return (
-    <div>
-      {isLoading ? (
-        <div className="flex justify-center items-center h-screen">
-          <CommonLoading />
-        </div>
-      ) : posts.length > 0 ? (
+    <>
+      {posts.length > 0 ? (
         <>
           {memoizedPosts}
           {posts.length < totalPosts && (
-            <LoadMoreButton
-              onClick={handleLoadMore}
-              isLoading={isLoadMoreLoading}
-            />
+            <LoadMoreButton onClick={handleLoadMore} isLoading={isLoadMoreLoading} />
           )}
         </>
       ) : (
         <NoPostsMessage />
       )}
-    </div>
+    </>
   );
 };
 

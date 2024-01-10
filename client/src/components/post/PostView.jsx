@@ -1,49 +1,59 @@
-import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  HiOutlineArchiveBox,
-  HiOutlineChatBubbleOvalLeft,
-} from "react-icons/hi2";
-import { IoIosArrowBack } from "react-icons/io";
-import { VscReport } from "react-icons/vsc";
+import { useEffect, useState } from "react";
+import { HiOutlineArchiveBox } from "react-icons/hi2";
+import { useDispatch } from "react-redux";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { getCommunityAction } from "../../redux/actions/communityActions";
 import Save from "./Save";
 import Like from "./Like";
 import CommentForm from "../form/CommentForm";
+import { HiOutlineChatBubbleOvalLeft } from "react-icons/hi2";
 import DeleteModal from "../modals/DeleteModal";
-import ReportPostModal from "../modals/ReportPostModal";
+import { IoIosArrowBack } from "react-icons/io";
 import CommonLoading from "../loader/CommonLoading";
 import "react-photo-view/dist/react-photo-view.css";
 import { PhotoProvider, PhotoView } from "react-photo-view";
+import ReportPostModal from "../modals/ReportPostModal";
+import { VscReport } from "react-icons/vsc";
 import Tooltip from "../shared/Tooltip";
 
 const PostView = ({ post, userData }) => {
   const [loading, setLoading] = useState(true);
+
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  useEffect(() => {
-    const fetchCommunity = async () => {
-      try {
-        await dispatch(getCommunityAction(post.community.name));
-      } finally {
-        setLoading(false);
-      }
-    };
+  const {
+    content,
+    fileUrl,
+    fileType,
+    user,
+    community,
+    dateTime,
+    comments,
+    savedByCount,
+    isReported,
+  } = post;
 
-    fetchCommunity();
-  }, [dispatch, post.community.name]);
+  useEffect(() => {
+    dispatch(getCommunityAction(community.name)).then(() => setLoading(false));
+  }, [dispatch, community.name, loading]);
 
   const [showModal, setShowModal] = useState(false);
-  const toggleModal = (value) => setShowModal(value);
+  const toggleModal = (value) => {
+    setShowModal(value);
+  };
 
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-  const [isReportedPost, setIsReportedPost] = useState(post.isReported);
+  const [isReportedPost, setIsReportedPost] = useState(isReported);
 
-  const handleReportClick = () => setIsReportModalOpen(true);
-  const handleReportClose = () => setIsReportModalOpen(false);
+  const handleReportClick = () => {
+    setIsReportModalOpen(true);
+  };
+
+  const handleReportClose = () => {
+    setIsReportModalOpen(false);
+  };
 
   if (loading) {
     return (
@@ -66,47 +76,50 @@ const PostView = ({ post, userData }) => {
         <div className="flex items-center gap-2">
           <img
             className="rounded-full overflow-hidden w-12 h-12 object-cover"
-            src={post.user.avatar}
+            src={user.avatar}
             alt="user avatar"
             loading="lazy"
           />
           <div className="flex flex-col">
+            {userData._id === user._id ? (
+              <Link to="/profile" className="text-lg font-semibold">
+                {user.name}
+              </Link>
+            ) : (
+              <Link to={`/user/${user._id}`} className="text-lg font-semibold">
+                {user.name}
+              </Link>
+            )}
             <Link
-              to={userData._id === post.user._id ? "/profile" : `/user/${post.user._id}`}
-              className="text-lg font-semibold"
-            >
-              {post.user.name}
-            </Link>
-            <Link
-              to={`/community/${post.community.name}`}
+              to={`/community/${community.name}`}
               className="text-xs text-gray-500"
             >
-              {post.community.name}
+              {community.name}
             </Link>
           </div>
         </div>
 
-        <span className="text-gray-500 text-sm self-center">{post.dateTime}</span>
+        <span className="text-gray-500 text-sm self-center">{dateTime}</span>
       </div>
 
       <div className="mb-4">
-        <p className="my-2">{post.content}</p>
+        <p className="my-2">{content}</p>
         <div className="flex justify-center">
-          {post.fileUrl && post.fileType === "image" ? (
+          {fileUrl && fileType === "image" ? (
             <PhotoProvider
               overlayRender={() => (
                 <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-10 text-white px-3 py-2">
-                  <p className="text-xs">{post.user.name}</p>
-                  <p className="text-xs">{post.community.name}</p>
-                  <p className="text-xs">{post.dateTime}</p>
+                  <p className="text-xs">{user.name}</p>
+                  <p className="text-xs">{community.name}</p>
+                  <p className="text-xs">{dateTime}</p>
                 </div>
               )}
             >
-              <PhotoView src={post.fileUrl}>
+              <PhotoView src={fileUrl}>
                 <div className="w-full aspect-w-1 aspect-h-1">
                   <img
-                    src={post.fileUrl}
-                    alt={post.content}
+                    src={fileUrl}
+                    alt={content}
                     loading="lazy"
                     className="cursor-pointer object-cover rounded-md"
                   />
@@ -114,11 +127,11 @@ const PostView = ({ post, userData }) => {
               </PhotoView>
             </PhotoProvider>
           ) : (
-            post.fileUrl && (
+            fileUrl && (
               <div className="w-full aspect-w-16 aspect-h-9">
                 <video
                   className="block mx-auto rounded-md focus:outline-none"
-                  src={post.fileUrl}
+                  src={fileUrl}
                   controls
                 />
               </div>
@@ -132,7 +145,7 @@ const PostView = ({ post, userData }) => {
           <Like post={post} />
           <button className="flex items-center space-x-1">
             <HiOutlineChatBubbleOvalLeft className="text-2xl" />
-            <span className="text-lg">{post.comments.length}</span>
+            <span className="text-lg">{comments.length}</span>
           </button>
         </div>
         <div className="flex items-center space-x-2">
@@ -140,7 +153,7 @@ const PostView = ({ post, userData }) => {
           <Tooltip text="Saved by" className="items-center">
             <div className="flex items-center">
               <HiOutlineArchiveBox className="text-2xl" />
-              {post.savedByCount}
+              {savedByCount}
             </div>
           </Tooltip>
           {isReportedPost ? (
@@ -181,12 +194,12 @@ const PostView = ({ post, userData }) => {
         isOpen={isReportModalOpen}
         onClose={handleReportClose}
         postId={post._id}
-        communityId={post.community._id}
+        communityId={community._id}
         setReportedPost={setIsReportedPost}
       />
 
       <div>
-        <CommentForm communityId={post.community._id} postId={post._id} />
+        <CommentForm communityId={community._id} postId={post._id} />
       </div>
     </div>
   );
